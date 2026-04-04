@@ -1,0 +1,13 @@
+{
+  "tool": "sudo-privesc-rust",
+  "timestamp": "2026-04-04T14:54:38.114268700+00:00",
+  "severity": "Error",
+  "target_os": "Linux",
+  "mode": "check",
+  "sudo_fetch": {
+    "ok": false,
+    "error": "An error occurred while checking sudo permissions: could not run `sudo`. Ensure `sudo` is installed and available in PATH."
+  },
+  "vulnerability_detected": false,
+  "exploit": null
+}
