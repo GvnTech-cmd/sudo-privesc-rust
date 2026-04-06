@@ -201,3 +201,12 @@ Add a `LICENSE` file before wide redistribution (MIT, Apache-2.0, or your instit
 <br/>
 
 </div>
+
+---
+
+## ?? Eklenen Yeni Özellikler
+Bu sürümle birlikte projeye aþaðýdaki profesyonel yapýlar dahil edilmiþtir:
+
+* **	ests/ Klasörü**: cargo test komutuyla çalýþan, kodun mantýðýný denetleyen entegrasyon testleri eklendi.
+* **examples/ Klasörü**: Aracýn ürettiði örnek ulnerability_report.json çýktýsý referans olarak eklendi.
+* **Otomatik Raporlama**: --json bayraðý ile artýk denetim sonuçlarý doðrudan dosya olarak kaydedilebiliyor.
