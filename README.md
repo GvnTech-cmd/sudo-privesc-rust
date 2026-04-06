@@ -62,6 +62,16 @@ Use it for **defensive validation**, **labs**, **CTF write-ups**, and **portfoli
 
 
 
+
+### 🎓 Academic Context
+**Institution:** [Your University Name]  
+**Department:** [Your Department]  
+**Instructor / Advisor:** [Instructor Name]  
+**Developer:** [Your Name / A11]
+
+
+
+
 ## ✨ Features
 
 
