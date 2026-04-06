@@ -89,7 +89,7 @@ fn main() {
                 println!("[*] Step 2: Analyzing rules for NOPASSWD on /usr/bin/find...");
             }
 
-            let vulnerable = rules.contains("/usr/bin/find") && rules.contains("NOPASSWD");
+            let vulnerable = (rules.contains("/usr/bin/find") || rules.contains(" find ")) && rules.contains("NOPASSWD");
 
             if mode_check {
                 run_check_mode(vulnerable, &rules, use_json);
